@@ -1,6 +1,6 @@
 # Project status — EigenFinance (FinanceMeta Lab)
 
-Last verified: 2026-09-19 (~10:15 IST) — **17 passed**; ruff clean; harden fail-closed holdout + finite p + CLI epilog
+Last verified: 2026-09-19 (marathon) — **pytest 17/17 PASS**; working tree clean on `eng/registry-sensitivity-local` @ `6399a53`
 
 ## Objective
 
@@ -30,7 +30,7 @@ transaction costs — without asserting real-market alpha.
 
 | Item | Truth |
 |---|---|
-| Local tip | `eng/registry-sensitivity-local` @ `2a134a0` + **uncommitted** harden (fail-closed holdout / finite p / epilog) |
+| Local tip | `eng/registry-sensitivity-local` @ `6399a53` (clean; ahead of `fm-candidate` by 1) |
 | Candidate GitHub | `https://github.com/Finance-Meta-Research/EigenFinance` (fetched as `fm-candidate`) |
 | Remote `main` | Placeholder history (`8c9f349` docs boundary) — **unrelated / diverged** from local eng tip |
 | Push | **BLOCKED** without human decision (do not force-push placeholder main) |
