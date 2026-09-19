@@ -46,7 +46,7 @@ def bonferroni(pvalues: dict[str, float]) -> tuple[AdjustedPValue, ...]:
 
 
 def holm(pvalues: dict[str, float]) -> tuple[AdjustedPValue, ...]:
-    """Holm step-down adjustment (stronger control than uncorrected; less conservative than Bonferroni)."""
+    """Holm step-down adjustment (stronger than uncorrected; less conservative than Bonferroni)."""
     items = _validate_pvalues(pvalues)
     ordered = sorted(items, key=lambda pair: pair[1])
     count = len(ordered)
