@@ -27,3 +27,22 @@ reproduction. Synthetic test fixtures are engineering evidence only.
 - Portfolio weights are computed only from each fold's training slice.
 - Data hashes, fold boundaries, weights, daily returns, costs, runtime, and source hashes are retained.
 
+## Limitations (finance-specific)
+
+- **Survivorship bias:** the loader requires a rectangular panel, so delisted or
+  intermittently missing assets are excluded before evaluation.
+- **Look-ahead via adjustments:** `adjusted_close` series that were revised after
+  the decision date can leak future corporate-action information unless the panel
+  is point-in-time.
+- **Costs vs execution:** `transaction_cost_bps` is a flat proportional cost.
+  Slippage, bid-ask bounce, partial fills, and market impact are not modeled.
+- **Regime dependence and overfitting:** development folds may be inspected before
+  the final holdout; multiplicity across datasets or protocols requires adjustment.
+- **Benchmark weakness:** equal weight and inverse volatility are strong simple
+  baselines for risk comparison, not exhaustive market benchmarks.
+
+## Claim policy
+
+Do not publish performance figures from synthetic fixtures. Do not claim alpha.
+Preserve negative and inconclusive holdout outcomes in the registry.
+

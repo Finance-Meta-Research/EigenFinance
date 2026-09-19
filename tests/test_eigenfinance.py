@@ -85,9 +85,52 @@ def test_manifest_is_fail_closed(tmp_path: Path) -> None:
     )
     loaded = DatasetManifest.load(manifest, prices)
     assert loaded.name == "synthetic-test-only"
+    assert loaded.adjustment_policy == "adjusted_close_risk_accepted"
     prices.write_text(prices.read_text(encoding="utf-8") + "\n", encoding="utf-8")
     with pytest.raises(ValueError, match="hash mismatch"):
         DatasetManifest.load(manifest, prices)
+
+
+def test_manifest_rejects_unknown_adjustment_policy(tmp_path: Path) -> None:
+    prices = tmp_path / "prices.csv"
+    write_prices(prices)
+    manifest = tmp_path / "dataset.json"
+    manifest.write_text(
+        json.dumps(
+            {
+                "name": "synthetic-test-only",
+                "source_url": "local://generated-test-fixture",
+                "license": "CC0-1.0",
+                "retrieved_at": "2026-09-14",
+                "file_sha256": hashlib.sha256(prices.read_bytes()).hexdigest(),
+                "adjustment_policy": "look_ahead_ok",
+            }
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="adjustment_policy"):
+        DatasetManifest.load(manifest, prices)
+
+
+def test_manifest_accepts_point_in_time_policy(tmp_path: Path) -> None:
+    prices = tmp_path / "prices.csv"
+    write_prices(prices)
+    manifest = tmp_path / "dataset.json"
+    manifest.write_text(
+        json.dumps(
+            {
+                "name": "synthetic-test-only",
+                "source_url": "local://generated-test-fixture",
+                "license": "CC0-1.0",
+                "retrieved_at": "2026-09-14",
+                "file_sha256": hashlib.sha256(prices.read_bytes()).hexdigest(),
+                "adjustment_policy": "point_in_time",
+            }
+        ),
+        encoding="utf-8",
+    )
+    loaded = DatasetManifest.load(manifest, prices)
+    assert loaded.adjustment_policy == "point_in_time"
 
 
 def test_folds_enforce_embargo_and_final_lock() -> None:
@@ -191,7 +234,42 @@ def test_cli_writes_verified_evidence(tmp_path: Path) -> None:
         text=True,
     )
     assert json.loads(completed.stdout)["status"] == "complete"
+    payload = json.loads(completed.stdout)
+    assert payload["validity"] == "engineering_only"
+    assert "hypothesis_result" in payload
+    assert payload["commit"]
     manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
     for name, expected in manifest["artifacts"].items():
         assert hashlib.sha256((output / name).read_bytes()).hexdigest() == expected
+    assert manifest["experiment_id"] == "result"
+    assert manifest["seed"] == "deterministic_no_rng"
+    assert "survivorship" in " ".join(manifest["limitations"])
+    registry = tmp_path / "experiment_registry.csv"
+    assert registry.is_file()
+    text = registry.read_text(encoding="utf-8")
+    assert "experiment_id" in text
+    assert "engineering_only" in text
+
+
+def test_registry_append_is_stable(tmp_path: Path) -> None:
+    from eigenfinance.registry import append_registry_row
+
+    path = tmp_path / "experiment_registry.csv"
+    row = {
+        "experiment_id": "demo",
+        "commit": "abc",
+        "config": "{}",
+        "dataset_version": "synthetic|deadbeef",
+        "seed": "deterministic_no_rng",
+        "hypothesis": "test",
+        "metrics": "{}",
+        "output_path": str(tmp_path),
+        "result": "hypothesis_rejected_on_this_run",
+        "validity": "engineering_only",
+        "timestamp": "2026-09-18T00:00:00+00:00",
+    }
+    append_registry_row(path, row)
+    append_registry_row(path, row)
+    lines = path.read_text(encoding="utf-8").strip().splitlines()
+    assert len(lines) == 3
 

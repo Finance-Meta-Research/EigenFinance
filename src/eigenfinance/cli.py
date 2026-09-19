@@ -15,6 +15,7 @@ from typing import Any
 from .backtest import run_walk_forward
 from .data import DatasetManifest, load_price_panel, sha256_file
 from .protocol import EvaluationProtocol
+from .registry import append_registry_row, git_commit, utc_timestamp
 
 
 def _atomic_text(path: Path, content: str) -> None:
@@ -47,7 +48,40 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--final-holdout-periods", type=int, default=63)
     parser.add_argument("--transaction-cost-bps", type=float, default=5.0)
     parser.add_argument("--covariance-shrinkage", type=float, default=0.1)
+    parser.add_argument(
+        "--experiment-id",
+        type=str,
+        default="",
+        help="Optional experiment id; defaults to output directory name",
+    )
+    parser.add_argument(
+        "--registry",
+        type=Path,
+        default=None,
+        help="Optional CSV registry path; defaults to <output>/../experiment_registry.csv",
+    )
+    parser.add_argument(
+        "--hypothesis",
+        type=str,
+        default=(
+            "shrinkage minimum-variance reduces final-holdout annualized volatility "
+            "vs equal weight without worse max drawdown after declared costs"
+        ),
+    )
     return parser
+
+
+def _evaluate_hypothesis(summary: dict[str, dict[str, float | int]]) -> str:
+    """Classify the frozen holdout comparison without inventing market claims."""
+    mv = summary["minimum_variance.final_holdout"]
+    ew = summary["equal_weight.final_holdout"]
+    mv_vol = float(mv["annual_volatility"])
+    ew_vol = float(ew["annual_volatility"])
+    mv_dd = float(mv["max_drawdown"])
+    ew_dd = float(ew["max_drawdown"])
+    if mv_vol < ew_vol and mv_dd >= ew_dd:
+        return "hypothesis_supported_on_this_run"
+    return "hypothesis_rejected_on_this_run"
 
 
 def run(args: argparse.Namespace) -> None:
@@ -64,6 +98,15 @@ def run(args: argparse.Namespace) -> None:
     panel = load_price_panel(args.prices)
     result = run_walk_forward(panel.returns, protocol)
     args.output.mkdir(parents=True, exist_ok=True)
+    experiment_id = args.experiment_id.strip() or args.output.name
+    commit = git_commit(Path(__file__).resolve().parents[2])
+    hypothesis_result = _evaluate_hypothesis(result.summary)
+    # Synthetic fixtures and unlicensed panels remain engineering-only.
+    validity = (
+        "engineering_only"
+        if dataset.source_url.startswith("local://") or "synthetic" in dataset.name.lower()
+        else "requires_independent_review"
+    )
 
     rows = [asdict(record) for record in result.daily]
     header = list(rows[0])
@@ -96,6 +139,12 @@ def run(args: argparse.Namespace) -> None:
     source_files = sorted(Path(__file__).parent.glob("*.py"))
     manifest = {
         "format": "eigenfinance-evidence-v1",
+        "experiment_id": experiment_id,
+        "commit": commit,
+        "seed": "deterministic_no_rng",
+        "hypothesis": args.hypothesis,
+        "hypothesis_result": hypothesis_result,
+        "validity": validity,
         "dataset": asdict(dataset),
         "protocol": protocol.as_dict(),
         "assets": panel.assets,
@@ -106,15 +155,55 @@ def run(args: argparse.Namespace) -> None:
             str(path.relative_to(Path(__file__).parents[2])): sha256_file(path)
             for path in source_files
         },
-        "runtime": {"python": sys.version, "platform": platform.platform()},
+        "runtime": {
+            "python": sys.version,
+            "platform": platform.platform(),
+            "timestamp": utc_timestamp(),
+        },
+        "limitations": [
+            "rectangular surviving-asset panels induce survivorship bias",
+            "adjusted_close revisions can introduce look-ahead if not point-in-time",
+            "transaction_cost_bps is a flat cost; slippage and market impact are not modeled",
+            "within-fold buy-and-hold charges turnover only at rebalance boundaries",
+        ],
     }
     _atomic_text(args.output / "manifest.json", _strict_json(manifest))
+    registry_path = args.registry or (args.output.parent / "experiment_registry.csv")
+    append_registry_row(
+        registry_path,
+        {
+            "experiment_id": experiment_id,
+            "commit": commit,
+            "config": _strict_json(protocol.as_dict()).strip(),
+            "dataset_version": f"{dataset.name}|{dataset.file_sha256[:12]}",
+            "seed": "deterministic_no_rng",
+            "hypothesis": args.hypothesis,
+            "metrics": _strict_json(
+                {
+                    key: result.summary[key]
+                    for key in (
+                        "equal_weight.final_holdout",
+                        "minimum_variance.final_holdout",
+                    )
+                }
+            ).strip(),
+            "output_path": str(args.output.resolve()),
+            "result": hypothesis_result,
+            "validity": validity,
+            "timestamp": utc_timestamp(),
+        },
+    )
     verification = hashlib.sha256(_strict_json(manifest).encode()).hexdigest()
     print(
         _strict_json(
             {
                 "status": "complete",
+                "experiment_id": experiment_id,
+                "commit": commit,
+                "validity": validity,
+                "hypothesis_result": hypothesis_result,
                 "manifest_sha256": verification,
+                "registry": str(registry_path.resolve()),
                 "summary": result.summary,
             }
         ),

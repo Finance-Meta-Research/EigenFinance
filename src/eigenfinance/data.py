@@ -13,6 +13,17 @@ import numpy.typing as npt
 FloatArray = npt.NDArray[np.float64]
 
 
+# Declared price-adjustment policies. Unknown/absent defaults to risk-accepted adjusted.
+ADJUSTMENT_POLICIES = frozenset(
+    {
+        "point_in_time",
+        "adjusted_close_risk_accepted",
+        "unadjusted",
+        "synthetic_fixture",
+    }
+)
+
+
 @dataclass(frozen=True)
 class DatasetManifest:
     name: str
@@ -20,6 +31,7 @@ class DatasetManifest:
     license: str
     retrieved_at: str
     file_sha256: str
+    adjustment_policy: str = "adjusted_close_risk_accepted"
 
     @classmethod
     def load(cls, path: Path, data_path: Path) -> DatasetManifest:
@@ -36,7 +48,13 @@ class DatasetManifest:
         for field in ("name", "source_url", "license", "retrieved_at"):
             if not str(payload[field]).strip():
                 raise ValueError(f"dataset manifest field {field!r} must be non-empty")
-        return cls(**{key: str(payload[key]) for key in required})
+        policy = str(payload.get("adjustment_policy", "adjusted_close_risk_accepted")).strip()
+        if policy not in ADJUSTMENT_POLICIES:
+            allowed = ", ".join(sorted(ADJUSTMENT_POLICIES))
+            raise ValueError(f"adjustment_policy must be one of: {allowed}")
+        fields = {key: str(payload[key]) for key in required}
+        fields["adjustment_policy"] = policy
+        return cls(**fields)
 
 
 @dataclass(frozen=True)
