@@ -339,6 +339,32 @@ def test_multiplicity_bonferroni_and_holm() -> None:
         bonferroni({})
     with pytest.raises(ValueError, match=r"\[0, 1\]"):
         holm({"bad": 1.5})
+    with pytest.raises(ValueError, match="finite"):
+        bonferroni({"nan": float("nan")})
+
+
+def test_holdout_slice_is_fail_closed() -> None:
+    from eigenfinance.sensitivity import _holdout_slice
+
+    complete = {
+        "equal_weight.final_holdout": {"total_return": 0.0},
+        "inverse_volatility.final_holdout": {"total_return": 0.0},
+        "minimum_variance.final_holdout": {"total_return": 0.0},
+    }
+    assert set(_holdout_slice(complete)) == set(complete)
+    with pytest.raises(KeyError, match="missing required final-holdout"):
+        _holdout_slice({"equal_weight.final_holdout": {"total_return": 0.0}})
+
+
+def test_cli_help_includes_engineering_epilog() -> None:
+    completed = subprocess.run(
+        [sys.executable, "-m", "eigenfinance.cli", "--help"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert "Engineering evidence only" in completed.stdout
+    assert "force-push" in completed.stdout
 
 
 def test_cli_writes_sensitivity_artifacts(tmp_path: Path) -> None:

@@ -6,6 +6,7 @@ scientific claim by themselves; use only after protocols and datasets are frozen
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 
@@ -24,9 +25,12 @@ def _validate_pvalues(pvalues: dict[str, float]) -> list[tuple[str, float]]:
     for label, value in pvalues.items():
         if not label.strip():
             raise ValueError("pvalue labels must be non-empty")
-        if not 0.0 <= float(value) <= 1.0:
+        raw = float(value)
+        if not math.isfinite(raw):
+            raise ValueError(f"pvalue for {label!r} must be finite")
+        if not 0.0 <= raw <= 1.0:
             raise ValueError(f"pvalue for {label!r} must be in [0, 1]")
-        items.append((label, float(value)))
+        items.append((label, raw))
     return items
 
 

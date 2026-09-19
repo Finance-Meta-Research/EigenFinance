@@ -1,6 +1,6 @@
 # Project status — EigenFinance (FinanceMeta Lab)
 
-Last verified: 2026-09-19 (agent file pass; Shell spawn broken — pytest not re-run here)
+Last verified: 2026-09-19 (~10:15 IST) — **17 passed**; ruff clean; harden fail-closed holdout + finite p + CLI epilog
 
 ## Objective
 
@@ -19,9 +19,10 @@ transaction costs — without asserting real-market alpha.
 | Package + CLI + walk-forward + costs | **VERIFIED COMPLETE** |
 | Experiment registry + commit provenance | **VERIFIED COMPLETE** (`9dea855` base; local dirty sensitivity+stress) |
 | `adjustment_policy` on dataset manifest | **VERIFIED COMPLETE** |
-| Cost sensitivity grid (all strategies) | **IMPLEMENTED** (needs local pytest) |
-| Slippage stress grid (flat extra bps) | **IMPLEMENTED** (needs local pytest) |
-| Multiplicity helpers (Bonferroni/Holm) | **IMPLEMENTED** (needs local pytest) |
+| Cost sensitivity grid (all strategies) | **VERIFIED** (fail-closed holdout keys) |
+| Slippage stress grid (flat extra bps) | **VERIFIED** |
+| Multiplicity helpers (Bonferroni/Holm) | **VERIFIED** (finite p-values required) |
+| CLI epilog (engineering-only / no force-push) | **VERIFIED** |
 | Real-market H1 evaluation | **NOT STARTED** |
 | Paper performance claims | **INVALID** if asserted |
 
@@ -29,7 +30,7 @@ transaction costs — without asserting real-market alpha.
 
 | Item | Truth |
 |---|---|
-| Local tip | `9dea855` on `main` + uncommitted sensitivity/stress/multiplicity |
+| Local tip | `eng/registry-sensitivity-local` @ `2a134a0` + **uncommitted** harden (fail-closed holdout / finite p / epilog) |
 | Candidate GitHub | `https://github.com/Finance-Meta-Research/EigenFinance` (fetched as `fm-candidate`) |
 | Remote `main` | Placeholder history (`8c9f349` docs boundary) — **unrelated / diverged** from local eng tip |
 | Push | **BLOCKED** without human decision (do not force-push placeholder main) |
@@ -38,7 +39,7 @@ transaction costs — without asserting real-market alpha.
 
 ```bash
 cd /Volumes/PRO-BLADE/GitHub-Every-Repo/EigenFinance
-.venv/bin/python -m pytest -q   # expect 15 passed
+.venv/bin/python -m pytest -q   # expect 17 passed
 .venv/bin/python -m ruff check src tests
 .venv/bin/python -m mypy src
 ```

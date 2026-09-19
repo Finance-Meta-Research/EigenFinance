@@ -38,7 +38,15 @@ def _strict_json(payload: Any) -> str:
 
 
 def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Run the EigenFinance walk-forward evaluation")
+    parser = argparse.ArgumentParser(
+        description="Run the EigenFinance walk-forward evaluation",
+        epilog=(
+            "Engineering evidence only: does not assert real-market alpha. "
+            "Use licensed rectangular prices + honest validity before any H1 claim. "
+            "Cost/slippage grids are descriptive; never force-push diverged remotes."
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     parser.add_argument("--prices", type=Path, required=True)
     parser.add_argument("--dataset-manifest", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
@@ -224,7 +232,6 @@ def run(args: argparse.Namespace) -> None:
                         "inverse_volatility.final_holdout",
                         "minimum_variance.final_holdout",
                     )
-                    if key in result.summary
                 }
             ).strip(),
             "output_path": str(args.output.resolve()),

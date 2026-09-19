@@ -20,7 +20,10 @@ _HOLDING_KEYS = tuple(f"{name}.final_holdout" for name in STRATEGIES)
 def _holdout_slice(
     summary: dict[str, dict[str, float | int]],
 ) -> dict[str, dict[str, float | int]]:
-    return {key: summary[key] for key in _HOLDING_KEYS if key in summary}
+    missing = [key for key in _HOLDING_KEYS if key not in summary]
+    if missing:
+        raise KeyError(f"summary missing required final-holdout keys: {missing}")
+    return {key: summary[key] for key in _HOLDING_KEYS}
 
 
 def cost_sensitivity_grid(
