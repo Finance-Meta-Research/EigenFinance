@@ -1,70 +1,58 @@
 # Project status — EigenFinance (FinanceMeta Lab)
 
-Last verified: 2026-09-18
+Last verified: 2026-09-19 (agent file pass; Shell spawn broken — pytest not re-run here)
 
 ## Objective
 
-Provide a leakage-resistant, auditable walk-forward evaluation system for long-only
-equal-weight, inverse-volatility, and shrinkage minimum-variance portfolios after
-declared transaction costs — without asserting real-market alpha.
+Leakage-resistant, auditable walk-forward evaluation for long-only equal-weight,
+inverse-volatility, and shrinkage minimum-variance portfolios after declared
+transaction costs — without asserting real-market alpha.
 
-## Research question
+## Lifecycle
 
-See `research-question.md`. Primary endpoint: final-holdout volatility improvement
-versus equal weight without worse max drawdown after costs.
-
-## Lifecycle stage
-
-**Engineering-complete / science-gated.** Implementation and tests are verified.
-Real-market evaluation has **not** started pending a licensed prospective dataset.
+**Engineering-complete / science-gated.** Real-market H1 evaluation **NOT STARTED**.
 
 ## Result status
 
 | Component | Classification |
 |---|---|
-| Package install + CLI evidence writer | **VERIFIED COMPLETE** |
-| Walk-forward folds, embargo, final holdout | **VERIFIED COMPLETE** |
-| Transaction-cost charging | **VERIFIED COMPLETE** |
-| Experiment registry + commit provenance | **VERIFIED COMPLETE** (added this session) |
+| Package + CLI + walk-forward + costs | **VERIFIED COMPLETE** |
+| Experiment registry + commit provenance | **VERIFIED COMPLETE** (`9dea855` base; local dirty sensitivity+stress) |
+| `adjustment_policy` on dataset manifest | **VERIFIED COMPLETE** |
+| Cost sensitivity grid (all strategies) | **IMPLEMENTED** (needs local pytest) |
+| Slippage stress grid (flat extra bps) | **IMPLEMENTED** (needs local pytest) |
+| Multiplicity helpers (Bonferroni/Holm) | **IMPLEMENTED** (needs local pytest) |
 | Real-market H1 evaluation | **NOT STARTED** |
-| Paper performance claims | **INVALID** if present; none retained |
+| Paper performance claims | **INVALID** if asserted |
 
-## Work completed this session
+## Git / remote
 
-- Verified 8→9 tests, Ruff, and strict Mypy.
-- Added `registry.py`, CLI registry append, commit/seed/validity/limitations in manifests.
-- Added `research-question.md`, `hypotheses.md`, `results.md`, `SECURITY_AUDIT.md`.
-- Expanded finance-specific limitations in `RESEARCH_TRUTH.md`.
-- Removed `FinanceMeta-Landing/.env.local` (`VERCEL_OIDC_TOKEN`); rotation may be required.
+| Item | Truth |
+|---|---|
+| Local tip | `9dea855` on `main` + uncommitted sensitivity/stress/multiplicity |
+| Candidate GitHub | `https://github.com/Finance-Meta-Research/EigenFinance` (fetched as `fm-candidate`) |
+| Remote `main` | Placeholder history (`8c9f349` docs boundary) — **unrelated / diverged** from local eng tip |
+| Push | **BLOCKED** without human decision (do not force-push placeholder main) |
 
-## Remaining blockers
-
-1. Licensed, point-in-time (or explicitly risk-accepted adjusted) price panel + manifest.
-2. Independent reproduction of any future non-engineering registry row.
-3. Operator confirmation that the removed Vercel OIDC token was rotated if exposed.
-
-## Files changed this session
-
-- `src/eigenfinance/registry.py` (new)
-- `src/eigenfinance/cli.py`
-- `tests/test_eigenfinance.py`
-- `RESEARCH_TRUTH.md`
-- `research-question.md`, `hypotheses.md`, `results.md`, `SECURITY_AUDIT.md`, `PROJECT_STATUS.md`
-
-## Validation commands
+## Verification (peer when Shell works)
 
 ```bash
 cd /Volumes/PRO-BLADE/GitHub-Every-Repo/EigenFinance
-.venv/bin/python -m pytest -q
+.venv/bin/python -m pytest -q   # expect 15 passed
 .venv/bin/python -m ruff check src tests
 .venv/bin/python -m mypy src
 ```
 
-Observed: **9 passed**; Ruff clean after autofix; Mypy clean.
+## Remaining blockers
 
-## Next highest-value tasks
+1. Human: choose remote strategy (replace placeholder main via PR from eng history, or new repo).
+2. Licensed rectangular prices + manifest including `adjustment_policy`.
+3. One frozen holdout run with honest `validity` (not `engineering_only` unless synthetic).
+4. If prior FinanceMeta Vercel OIDC `.env.local` was exposed, confirm rotation.
+5. Peer: run suite + commit when asked (see `/Volumes/PRO-BLADE/PEER_PUSH_NOTES.md`).
 
-1. **P0** — Acquire/declare a licensed dataset; freeze protocol; run one holdout study; register it.
-2. **P1** — Optional point-in-time adjustment mode or explicit `adjustment_policy` manifest field.
-3. **P2** — Slippage stress grid as descriptive sensitivity (not primary H1).
-4. **P3** — Multi-dataset multiplicity correction helper.
+## Next tasks
+
+1. **P0** — Remote strategy + licensed dataset.
+2. **P2** — Slippage stress grid — **DONE locally (unverified by pytest this session)**.
+3. **P3** — Multiplicity correction helper — **DONE locally (unverified by pytest this session)**.

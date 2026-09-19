@@ -36,8 +36,11 @@ reproduction. Synthetic test fixtures are engineering evidence only.
   is point-in-time.
 - **Costs vs execution:** `transaction_cost_bps` is a flat proportional cost.
   Slippage, bid-ask bounce, partial fills, and market impact are not modeled.
+  Optional `--cost-sensitivity` and `--slippage-stress` grids only re-run the same
+  flat-cost model at stressed bps levels; they are descriptive, not H1 endpoints.
 - **Regime dependence and overfitting:** development folds may be inspected before
-  the final holdout; multiplicity across datasets or protocols requires adjustment.
+  the final holdout; multiplicity across datasets or protocols requires adjustment
+  (see `eigenfinance.multiplicity` for Bonferroni/Holm helpers).
 - **Benchmark weakness:** equal weight and inverse volatility are strong simple
   baselines for risk comparison, not exhaustive market benchmarks.
 

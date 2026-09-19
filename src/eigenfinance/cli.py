@@ -16,6 +16,7 @@ from .backtest import run_walk_forward
 from .data import DatasetManifest, load_price_panel, sha256_file
 from .protocol import EvaluationProtocol
 from .registry import append_registry_row, git_commit, utc_timestamp
+from .sensitivity import cost_sensitivity_grid, slippage_stress_grid
 
 
 def _atomic_text(path: Path, content: str) -> None:
@@ -66,6 +67,22 @@ def _parser() -> argparse.ArgumentParser:
         default=(
             "shrinkage minimum-variance reduces final-holdout annualized volatility "
             "vs equal weight without worse max drawdown after declared costs"
+        ),
+    )
+    parser.add_argument(
+        "--cost-sensitivity",
+        action="store_true",
+        help=(
+            "Also write descriptive cost_sensitivity.json over 0/5/10/25/50 bps "
+            "for all strategies (not part of the primary H1 claim)"
+        ),
+    )
+    parser.add_argument(
+        "--slippage-stress",
+        action="store_true",
+        help=(
+            "Also write descriptive slippage_stress.json adding 0/5/10/25 bps "
+            "on top of --transaction-cost-bps (flat stress only; not market impact)"
         ),
     )
     return parser
@@ -168,6 +185,27 @@ def run(args: argparse.Namespace) -> None:
         ],
     }
     _atomic_text(args.output / "manifest.json", _strict_json(manifest))
+    if args.cost_sensitivity:
+        sensitivity = {
+            "format": "eigenfinance-cost-sensitivity-v1",
+            "disclaimer": (
+                "Descriptive only; not the primary hypothesis endpoint. "
+                "Does not model slippage or market impact beyond flat bps."
+            ),
+            "grid": cost_sensitivity_grid(panel.returns, protocol),
+        }
+        _atomic_text(args.output / "cost_sensitivity.json", _strict_json(sensitivity))
+    if args.slippage_stress:
+        stress = {
+            "format": "eigenfinance-slippage-stress-v1",
+            "disclaimer": (
+                "Descriptive flat extra-bps stress on top of declared transaction_cost_bps. "
+                "Not a market-impact, bid-ask, or partial-fill model. Not part of H1."
+            ),
+            "base_transaction_cost_bps": protocol.transaction_cost_bps,
+            "grid": slippage_stress_grid(panel.returns, protocol),
+        }
+        _atomic_text(args.output / "slippage_stress.json", _strict_json(stress))
     registry_path = args.registry or (args.output.parent / "experiment_registry.csv")
     append_registry_row(
         registry_path,
@@ -183,8 +221,10 @@ def run(args: argparse.Namespace) -> None:
                     key: result.summary[key]
                     for key in (
                         "equal_weight.final_holdout",
+                        "inverse_volatility.final_holdout",
                         "minimum_variance.final_holdout",
                     )
+                    if key in result.summary
                 }
             ).strip(),
             "output_path": str(args.output.resolve()),

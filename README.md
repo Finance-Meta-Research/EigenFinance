@@ -57,8 +57,17 @@ python -m venv .venv
   --embargo-periods 1 \
   --final-holdout-periods 63 \
   --transaction-cost-bps 5 \
-  --covariance-shrinkage 0.1
+  --covariance-shrinkage 0.1 \
+  --cost-sensitivity \
+  --slippage-stress
 ```
+
+Optional flags:
+
+- `--cost-sensitivity` writes descriptive `cost_sensitivity.json` over 0/5/10/25/50 flat bps for all three strategies (not part of H1).
+- `--slippage-stress` writes descriptive `slippage_stress.json` that adds 0/5/10/25 flat bps on top of `--transaction-cost-bps` (still not a market-impact model).
+
+Multiplicity helpers (`eigenfinance.multiplicity.bonferroni` / `holm`) are available for multi-dataset scans after protocols are frozen.
 
 The run atomically writes raw daily returns, per-fold portfolio weights, summary metrics, artifact
 hashes, source hashes, the complete protocol, runtime metadata, and dataset provenance.

@@ -273,3 +273,122 @@ def test_registry_append_is_stable(tmp_path: Path) -> None:
     lines = path.read_text(encoding="utf-8").strip().splitlines()
     assert len(lines) == 3
 
+
+
+def test_cost_sensitivity_grid_is_descriptive(tmp_path: Path) -> None:
+    from eigenfinance.protocol import EvaluationProtocol
+    from eigenfinance.sensitivity import cost_sensitivity_grid
+
+    prices = tmp_path / "prices.csv"
+    write_prices(prices, periods=120)
+    panel = load_price_panel(prices)
+    protocol = EvaluationProtocol(
+        train_periods=40,
+        test_periods=10,
+        step_periods=10,
+        embargo_periods=1,
+        final_holdout_periods=20,
+        transaction_cost_bps=5.0,
+    )
+    grid = cost_sensitivity_grid(panel.returns, protocol, (0.0, 5.0, 25.0))
+    assert set(grid) == {"0_bps", "5_bps", "25_bps"}
+    for strategy in STRATEGIES:
+        assert f"{strategy}.final_holdout" in grid["5_bps"]
+    with pytest.raises(ValueError, match="non-empty"):
+        cost_sensitivity_grid(panel.returns, protocol, ())
+    with pytest.raises(ValueError, match="non-negative"):
+        cost_sensitivity_grid(panel.returns, protocol, (-1.0,))
+
+
+def test_slippage_stress_grid_adds_flat_extra_bps(tmp_path: Path) -> None:
+    from eigenfinance.protocol import EvaluationProtocol
+    from eigenfinance.sensitivity import slippage_stress_grid
+
+    prices = tmp_path / "prices.csv"
+    write_prices(prices, periods=120)
+    panel = load_price_panel(prices)
+    protocol = EvaluationProtocol(
+        train_periods=40,
+        test_periods=10,
+        step_periods=10,
+        embargo_periods=1,
+        final_holdout_periods=20,
+        transaction_cost_bps=5.0,
+    )
+    grid = slippage_stress_grid(panel.returns, protocol, (0.0, 10.0))
+    assert set(grid) == {"base_5_plus_0_bps", "base_5_plus_10_bps"}
+    zero = grid["base_5_plus_0_bps"]["equal_weight.final_holdout"]["total_return"]
+    stressed = grid["base_5_plus_10_bps"]["equal_weight.final_holdout"]["total_return"]
+    assert isinstance(zero, float) and isinstance(stressed, float)
+    assert stressed <= zero
+
+
+def test_multiplicity_bonferroni_and_holm() -> None:
+    from eigenfinance.multiplicity import bonferroni, holm
+
+    raw = {"a": 0.01, "b": 0.04, "c": 0.20}
+    bonf = {row.label: row.adjusted_p for row in bonferroni(raw)}
+    assert bonf["a"] == pytest.approx(0.03)
+    assert bonf["b"] == pytest.approx(0.12)
+    assert bonf["c"] == pytest.approx(0.60)
+    holm_rows = {row.label: row.adjusted_p for row in holm(raw)}
+    assert holm_rows["a"] == pytest.approx(0.03)
+    assert holm_rows["b"] == pytest.approx(0.08)
+    assert holm_rows["c"] == pytest.approx(0.20)
+    with pytest.raises(ValueError, match="non-empty"):
+        bonferroni({})
+    with pytest.raises(ValueError, match=r"\[0, 1\]"):
+        holm({"bad": 1.5})
+
+
+def test_cli_writes_sensitivity_artifacts(tmp_path: Path) -> None:
+    prices = tmp_path / "prices.csv"
+    write_prices(prices, periods=120)
+    dataset = tmp_path / "dataset.json"
+    dataset.write_text(
+        json.dumps(
+            {
+                "name": "synthetic-test-only",
+                "source_url": "local://generated-test-fixture",
+                "license": "CC0-1.0",
+                "retrieved_at": "2026-09-14",
+                "file_sha256": hashlib.sha256(prices.read_bytes()).hexdigest(),
+            }
+        ),
+        encoding="utf-8",
+    )
+    output = tmp_path / "result-stress"
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "eigenfinance.cli",
+            "--prices",
+            str(prices),
+            "--dataset-manifest",
+            str(dataset),
+            "--output",
+            str(output),
+            "--train-periods",
+            "40",
+            "--test-periods",
+            "10",
+            "--step-periods",
+            "10",
+            "--embargo-periods",
+            "1",
+            "--final-holdout-periods",
+            "20",
+            "--cost-sensitivity",
+            "--slippage-stress",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert json.loads(completed.stdout)["status"] == "complete"
+    cost = json.loads((output / "cost_sensitivity.json").read_text(encoding="utf-8"))
+    slip = json.loads((output / "slippage_stress.json").read_text(encoding="utf-8"))
+    assert cost["format"] == "eigenfinance-cost-sensitivity-v1"
+    assert slip["format"] == "eigenfinance-slippage-stress-v1"
+    assert "inverse_volatility.final_holdout" in cost["grid"]["5_bps"]
