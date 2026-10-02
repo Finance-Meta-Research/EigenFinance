@@ -28,3 +28,11 @@ python covariance_audit.py matrix.json
 `matrix.json` is a square JSON numeric array. For an explicitly fictional arithmetic fixture `[[1,0],[0,4]]`, eigenvalues are 1 and 4 and condition number is 4. No supplied examples represent market observations. The prototype neither reads protected data nor estimates forecast skill.
 
 Accountable scientific owner and reviewer remain to be named before study activation. No dataset or learned model is included; no alpha, risk-reduction or real-market effectiveness claim is supported.
+
+## Executable development comparison
+
+`development_comparison.py` now compares rolling sample covariance, its diagonal, and a fixed 20% shrinkage toward that diagonal. This shrinkage choice is an illustrative development comparator, not a selected optimum. All predictors consume the same past context; evaluation windows do not overlap. Each result retains context/evaluation dates, squared Frobenius errors, mean errors and unused tail count. A future sample covariance is a noisy target. Asset counts affect the scale of this unnormalized metric.
+
+Run `python development_comparison.py development.json`. The JSON object requires `evaluation_mode: "development"`, a nonempty `source`, unique `assets`, integer `train_rows` and `horizon_rows` of at least two, and `rows` containing strictly increasing completed ISO calendar `date` values and numeric decimal `returns` in asset order. Every complete horizon is evaluated; trailing incomplete rows are counted and excluded. Missing values and duplicate dates are rejected rather than imputed. Protected mode is refused.
+
+This harness checks supplied dates, not provider release times, licensing, delistings or revision vintages. Source and availability verification remain false. Use only permitted development data after the study scope is agreed; no real dataset has been processed here. Fourteen fixture tests passed, including independent known covariance errors, context/evaluation separation, invalid contracts, protected-mode refusal and extreme-scale matrix diagnostics.

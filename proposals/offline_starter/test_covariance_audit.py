@@ -31,6 +31,18 @@ class CovarianceAuditTests(unittest.TestCase):
         r = audit([[1e-12, 0], [0, -1e-12]])
         self.assertFalse(r["positive_semidefinite"])
 
+    def test_smallest_negative_float_does_not_disappear(self):
+        self.assertFalse(audit([[-5e-324]])["positive_semidefinite"])
+
+    def test_smallest_positive_float_remains_positive(self):
+        r = audit([[5e-324]])
+        self.assertTrue(r["positive_definite"])
+        self.assertEqual(r["spectral_condition_number"], 1)
+
+    def test_extreme_asymmetry_is_rejected(self):
+        with self.assertRaises(ValueError):
+            audit([[1e308, 1e308], [-1e308, 1e308]])
+
 
 if __name__ == "__main__":
     unittest.main()

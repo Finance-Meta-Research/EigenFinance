@@ -17,15 +17,18 @@ def audit(matrix):
         raise ValueError("nonfinite covariance entry")
     scale = float(np.max(np.abs(a)))
     tolerance = 1e-10 * scale
-    if not np.allclose(a, a.T, rtol=0, atol=tolerance):
+    normalized = a / scale if scale else a.copy()
+    if not np.allclose(normalized, normalized.T, rtol=0, atol=1e-10):
         raise ValueError("matrix is not symmetric within declared tolerance")
-    a = (a / 2) + (a.T / 2)
-    eigenvalues = np.linalg.eigvalsh(a)
+    normalized = (normalized / 2) + (normalized.T / 2)
+    spectrum = np.linalg.eigvalsh(normalized)
+    with np.errstate(over="ignore", invalid="ignore"):
+        eigenvalues = spectrum * scale
     if not np.isfinite(eigenvalues).all():
         raise ValueError("eigendecomposition overflow")
-    psd = bool(eigenvalues[0] >= -tolerance)
-    positive_definite = bool(eigenvalues[0] > tolerance)
-    condition = float(eigenvalues[-1] / eigenvalues[0]) if positive_definite else None
+    psd = bool(spectrum[0] >= -1e-10)
+    positive_definite = bool(spectrum[0] > 1e-10)
+    condition = float(spectrum[-1] / spectrum[0]) if positive_definite else None
     if condition is not None and not np.isfinite(condition):
         condition = None
     return {"assets": len(a), "symmetric": True, "positive_semidefinite": psd,
