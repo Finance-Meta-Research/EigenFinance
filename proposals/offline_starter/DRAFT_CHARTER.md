@@ -36,3 +36,20 @@ Accountable scientific owner and reviewer remain to be named before study activa
 Run `python development_comparison.py development.json`. The JSON object requires `evaluation_mode: "development"`, a nonempty `source`, unique `assets`, integer `train_rows` and `horizon_rows` of at least two, and `rows` containing strictly increasing completed ISO calendar `date` values and numeric decimal `returns` in asset order. Every complete horizon is evaluated; trailing incomplete rows are counted and excluded. Missing values and duplicate dates are rejected rather than imputed. Protected mode is refused.
 
 This harness checks supplied dates, not provider release times, licensing, delistings or revision vintages. Source and availability verification remain false. Use only permitted development data after the study scope is agreed; no real dataset has been processed here. Fourteen fixture tests passed, including independent known covariance errors, context/evaluation separation, invalid contracts, protected-mode refusal and extreme-scale matrix diagnostics.
+
+## Numerical reporting correction, 2026-10-10
+
+Finite supplied values can still underflow during covariance or squared-error
+calculation. Reproduced with fictional fixtures scaled by `1e-200` and `1e-100`:
+the previous comparator reported zero errors despite changing observations or
+unequal covariance matrices. The comparator now refuses a receipt if a
+nonconstant column loses all sample variance, or if a nonzero covariance
+difference squares to an exact zero loss. This preserves the declared squared
+Frobenius metric rather than silently changing units or implying perfect skill.
+
+Four additional arithmetic regression tests cover both failure stages, a small
+representable positive loss, and genuinely zero errors/constant observations.
+Ordinary existing fixtures keep their exact reported values. These are
+numerical implementation checks within the existing proposed offline scope;
+they do not activate the study, verify any data source, change the illustrative
+20% shrinkage choice, or establish financial performance.

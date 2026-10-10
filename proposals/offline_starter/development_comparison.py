@@ -6,6 +6,18 @@ import math
 import numpy as np
 
 
+def _covariance(rows):
+    covariance = np.atleast_2d(np.cov(rows, rowvar=False, ddof=1))
+    if not np.isfinite(covariance).all():
+        raise ValueError("covariance/loss overflow; no comparison receipt")
+    # A genuinely nonconstant supplied column has positive sample variance.
+    # Underflow must not turn that dispersion into an exact zero covariance.
+    nonconstant = np.any(rows != rows[0], axis=0)
+    if np.any(nonconstant & (np.diag(covariance) == 0)):
+        raise ValueError("covariance underflow; no comparison receipt")
+    return covariance
+
+
 def compare(record):
     if not isinstance(record, dict) or record.get("evaluation_mode") != "development":
         raise ValueError("only explicit development mode is supported")
@@ -50,13 +62,18 @@ def compare(record):
         context = values[start-train:start]
         future = values[start:start+horizon]
         with np.errstate(over="ignore", invalid="ignore"):
-            sample = np.atleast_2d(np.cov(context, rowvar=False, ddof=1))
-            realized = np.atleast_2d(np.cov(future, rowvar=False, ddof=1))
+            sample = _covariance(context)
+            realized = _covariance(future)
             diagonal = np.diag(np.diag(sample))
             # Fixed illustrative comparator, not tuned or advertised as optimal.
             shrunk = .8 * sample + .2 * diagonal
-            losses = {name: float(np.sum((prediction - realized)**2))
-                      for name, prediction in [("sample", sample), ("diagonal", diagonal), ("fixed_shrinkage_0_2", shrunk)]}
+            losses = {}
+            for name, prediction in [("sample", sample), ("diagonal", diagonal), ("fixed_shrinkage_0_2", shrunk)]:
+                difference = prediction - realized
+                loss = float(np.sum(difference**2))
+                if loss == 0 and np.any(difference != 0):
+                    raise ValueError("nonzero covariance error underflowed; no comparison receipt")
+                losses[name] = loss
         if not np.isfinite(sample).all() or not np.isfinite(realized).all() or any(not math.isfinite(v) for v in losses.values()):
             raise ValueError("covariance/loss overflow; no comparison receipt")
         folds.append({"context_start": dates[start-train], "context_end": dates[start-1],
