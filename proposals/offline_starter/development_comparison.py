@@ -3,7 +3,17 @@ import argparse
 import datetime as dt
 import json
 import math
+import hashlib
+from pathlib import Path
 import numpy as np
+
+
+def canonical_sha256(value):
+    try:
+        encoded = json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")
+    except (TypeError, ValueError) as error:
+        raise ValueError("input and provenance must be finite JSON") from error
+    return hashlib.sha256(encoded).hexdigest()
 
 
 def compare(record):
@@ -12,6 +22,7 @@ def compare(record):
     source = record.get("source")
     if not isinstance(source, str) or not source.strip():
         raise ValueError("source reference required")
+    input_sha256 = canonical_sha256(record)
     rows = record.get("rows")
     train = record.get("train_rows")
     horizon = record.get("horizon_rows")
@@ -55,14 +66,28 @@ def compare(record):
             diagonal = np.diag(np.diag(sample))
             # Fixed illustrative comparator, not tuned or advertised as optimal.
             shrunk = .8 * sample + .2 * diagonal
+            predictions = {"sample": sample, "diagonal": diagonal, "fixed_shrinkage_0_2": shrunk}
             losses = {name: float(np.sum((prediction - realized)**2))
-                      for name, prediction in [("sample", sample), ("diagonal", diagonal), ("fixed_shrinkage_0_2", shrunk)]}
+                      for name, prediction in predictions.items()}
         if not np.isfinite(sample).all() or not np.isfinite(realized).all() or any(not math.isfinite(v) for v in losses.values()):
             raise ValueError("covariance/loss overflow; no comparison receipt")
         folds.append({"context_start": dates[start-train], "context_end": dates[start-1],
                       "evaluation_start": dates[start], "evaluation_end": dates[start+horizon-1],
-                      "squared_frobenius_error": losses})
-    return {"evaluation_mode": "development", "source": source.strip(), "assets": assets,
+                      "context_sha256": canonical_sha256(rows[start-train:start]),
+                      "evaluation_sha256": canonical_sha256(rows[start:start+horizon]),
+                      "predicted_covariance": {name: value.tolist() for name, value in predictions.items()},
+                      "realized_covariance": realized.tolist(),
+                      "squared_frobenius_error": losses,
+                      "paired_error_difference_vs_sample": {name: value - losses["sample"] for name, value in losses.items()}})
+    return {"schema": "eigenfinance.development-covariance.v2",
+            "input_sha256": input_sha256,
+            "source_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+            "numpy_version": np.__version__,
+            "estimator_configuration": {"covariance_ddof": 1, "shrinkage_weight": 0.2,
+                                        "shrinkage_target": "diagonal of same-context sample covariance",
+                                        "metric": "unnormalized squared Frobenius error against common future sample covariance",
+                                        "paired_difference": "method error minus sample error; negative is lower error"},
+            "evaluation_mode": "development", "source": source.strip(), "assets": assets,
             "train_rows": train, "horizon_rows": horizon, "folds": folds,
             "unused_tail_rows": (len(rows)-train) % horizon,
             "mean_squared_frobenius_error": {name: math.fsum(f["squared_frobenius_error"][name]/len(folds) for f in folds)
