@@ -84,3 +84,16 @@ suite passed **25 tests in 0.409 seconds**. The existing exact-source bounded CI
 runs these regressions. Stored losses remain rounded binary64 output values;
 the implementation does not infer economic significance from representable
 numerical differences or promise arbitrary-precision covariances.
+
+### Verify the draft source independently of PR event eligibility
+
+The Actions API returned no workflow for published source
+`0a60a4959190d165df40d568ba097dcdb592ff96`, while PR metadata reported
+`mergeable: false` / `dirty`. The commit comparison independently shows its
+existing stacked base `b3150dfb0c02560e226b958348684eab012bfca0` is an ancestor
+(two commits ahead, zero behind), so there is no source conflict to resolve.
+The bounded workflow now also accepts pushes to this exact draft branch. Its
+same exact-source checkout, five-minute limit, one numeric thread and fictional
+unit tests are retained. This avoids depending solely on PR event eligibility
+without retargeting or merging either proposal. A prior-head green check is not
+treated as validation of a later revision; final run identity is in the PR.

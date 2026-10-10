@@ -6,7 +6,7 @@ on:
       - "proposals/offline_starter/**"
       - ".github/workflows/proposed-tools-integrity.yml"
   push:
-    branches: [main, codex/offline-starter-20261002]
+    branches: [main, codex/offline-starter-20261002, codex/research-integrity-20261010-eigenfinance-receipts]
     paths:
       - "proposals/offline_starter/**"
       - ".github/workflows/proposed-tools-integrity.yml"
