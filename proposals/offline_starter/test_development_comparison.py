@@ -65,7 +65,7 @@ class DevelopmentComparisonTests(unittest.TestCase):
         r = self.record()
         for row in r["rows"]:
             row["returns"] = [v * 1e-100 for v in row["returns"]]
-        with self.assertRaisesRegex(ValueError, "nonzero covariance error underflowed"):
+        with self.assertRaisesRegex(ValueError, "squared Frobenius loss underflow"):
             compare(r)
 
     def test_small_representable_nonzero_error_is_preserved(self):

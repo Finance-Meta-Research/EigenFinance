@@ -1,0 +1,360 @@
+FFFFFFFF                                                                 [100%]
+=================================== FAILURES ===================================
+____ test_fallback_preserves_independently_scaled_columns[False-1.0-1e-07] _____
+
+small_amplitude = 1e-07, small_sign = 1.0, reverse_columns = False
+
+    @pytest.mark.parametrize("small_amplitude", [1e-7, 1e-154])
+    @pytest.mark.parametrize("small_sign", [1., -1.])
+    @pytest.mark.parametrize("reverse_columns", [False, True])
+    def test_fallback_preserves_independently_scaled_columns(small_amplitude, small_sign, reverse_columns):
+        amplitude = np.array([1e154, small_sign * small_amplitude])
+        if reverse_columns:
+            amplitude = amplitude[::-1]
+        values = np.stack([np.zeros(2), amplitude] * 4)
+        # Four observations at zero and four at a: sample covariance is
+        # 8*(a/2)(a/2)^T / 7 = (2/7) aa^T. Every entry is representable.
+        expected = (2. / 7.) * np.outer(amplitude, amplitude)
+        actual = _covariance(values)
+>       np.testing.assert_allclose(actual, expected, rtol=2e-14, atol=0.)
+E       AssertionError: 
+E       Not equal to tolerance rtol=2e-14, atol=0
+E       
+E       Mismatched elements: 1 / 4 (25%)
+E       Max absolute difference among violations: 1.07251018e-16
+E       Max relative difference among violations: 0.03753786
+E        ACTUAL: array([[2.857143e+307, 2.857143e+146],
+E              [2.857143e+146, 2.964394e-015]])
+E        DESIRED: array([[2.857143e+307, 2.857143e+146],
+E              [2.857143e+146, 2.857143e-015]])
+
+proposals/offline_starter/test_covariance_scale_fallback.py:21: AssertionError
+____ test_fallback_preserves_independently_scaled_columns[False-1.0-1e-154] ____
+
+small_amplitude = 1e-154, small_sign = 1.0, reverse_columns = False
+
+    @pytest.mark.parametrize("small_amplitude", [1e-7, 1e-154])
+    @pytest.mark.parametrize("small_sign", [1., -1.])
+    @pytest.mark.parametrize("reverse_columns", [False, True])
+    def test_fallback_preserves_independently_scaled_columns(small_amplitude, small_sign, reverse_columns):
+        amplitude = np.array([1e154, small_sign * small_amplitude])
+        if reverse_columns:
+            amplitude = amplitude[::-1]
+        values = np.stack([np.zeros(2), amplitude] * 4)
+        # Four observations at zero and four at a: sample covariance is
+        # 8*(a/2)(a/2)^T / 7 = (2/7) aa^T. Every entry is representable.
+        expected = (2. / 7.) * np.outer(amplitude, amplitude)
+>       actual = _covariance(values)
+                 ^^^^^^^^^^^^^^^^^^^
+
+proposals/offline_starter/test_covariance_scale_fallback.py:20: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+rows = array([[0.e+000, 0.e+000],
+       [1.e+154, 1.e-154],
+       [0.e+000, 0.e+000],
+       [1.e+154, 1.e-154],
+       [0.e+000, 0.e+000],
+       [1.e+154, 1.e-154],
+       [0.e+000, 0.e+000],
+       [1.e+154, 1.e-154]])
+
+    def _covariance(rows):
+        with np.errstate(over="ignore", invalid="ignore"):
+            covariance = np.atleast_2d(np.cov(rows, rowvar=False, ddof=1))
+        if not np.isfinite(covariance).all():
+            # np.cov may overflow its mean reduction even for a large constant
+            # column whose covariance is exactly zero. Only the failing arithmetic
+            # path uses shifted/normalized centering; normal-scale results retain
+            # their existing calculation and the declared squared-Frobenius metric.
+            with np.errstate(over="ignore", invalid="ignore", under="ignore"):
+                shifted = rows - rows[0]
+                if np.isfinite(shifted).all():
+                    scale = float(np.max(np.abs(shifted)))
+                    normalized = shifted / scale if scale else shifted
+                else:
+                    scale = float(np.max(np.abs(rows)))
+                    normalized = rows / scale
+                centered = normalized - normalized.mean(axis=0, keepdims=True)
+                covariance = ((centered.T @ centered / (len(rows) - 1)) * scale) * scale
+        if not np.isfinite(covariance).all():
+            raise ValueError("covariance/loss overflow; no comparison receipt")
+        # A genuinely nonconstant supplied column has positive sample variance.
+        # Underflow must not turn that dispersion into an exact zero covariance.
+        nonconstant = np.any(rows != rows[0], axis=0)
+        if np.any(nonconstant & (np.diag(covariance) == 0)):
+>           raise ValueError("covariance underflow; no comparison receipt")
+E           ValueError: covariance underflow; no comparison receipt
+
+proposals/offline_starter/development_comparison.py:43: ValueError
+____ test_fallback_preserves_independently_scaled_columns[False--1.0-1e-07] ____
+
+small_amplitude = 1e-07, small_sign = -1.0, reverse_columns = False
+
+    @pytest.mark.parametrize("small_amplitude", [1e-7, 1e-154])
+    @pytest.mark.parametrize("small_sign", [1., -1.])
+    @pytest.mark.parametrize("reverse_columns", [False, True])
+    def test_fallback_preserves_independently_scaled_columns(small_amplitude, small_sign, reverse_columns):
+        amplitude = np.array([1e154, small_sign * small_amplitude])
+        if reverse_columns:
+            amplitude = amplitude[::-1]
+        values = np.stack([np.zeros(2), amplitude] * 4)
+        # Four observations at zero and four at a: sample covariance is
+        # 8*(a/2)(a/2)^T / 7 = (2/7) aa^T. Every entry is representable.
+        expected = (2. / 7.) * np.outer(amplitude, amplitude)
+        actual = _covariance(values)
+>       np.testing.assert_allclose(actual, expected, rtol=2e-14, atol=0.)
+E       AssertionError: 
+E       Not equal to tolerance rtol=2e-14, atol=0
+E       
+E       Mismatched elements: 1 / 4 (25%)
+E       Max absolute difference among violations: 1.07251018e-16
+E       Max relative difference among violations: 0.03753786
+E        ACTUAL: array([[ 2.857143e+307, -2.857143e+146],
+E              [-2.857143e+146,  2.964394e-015]])
+E        DESIRED: array([[ 2.857143e+307, -2.857143e+146],
+E              [-2.857143e+146,  2.857143e-015]])
+
+proposals/offline_starter/test_covariance_scale_fallback.py:21: AssertionError
+___ test_fallback_preserves_independently_scaled_columns[False--1.0-1e-154] ____
+
+small_amplitude = 1e-154, small_sign = -1.0, reverse_columns = False
+
+    @pytest.mark.parametrize("small_amplitude", [1e-7, 1e-154])
+    @pytest.mark.parametrize("small_sign", [1., -1.])
+    @pytest.mark.parametrize("reverse_columns", [False, True])
+    def test_fallback_preserves_independently_scaled_columns(small_amplitude, small_sign, reverse_columns):
+        amplitude = np.array([1e154, small_sign * small_amplitude])
+        if reverse_columns:
+            amplitude = amplitude[::-1]
+        values = np.stack([np.zeros(2), amplitude] * 4)
+        # Four observations at zero and four at a: sample covariance is
+        # 8*(a/2)(a/2)^T / 7 = (2/7) aa^T. Every entry is representable.
+        expected = (2. / 7.) * np.outer(amplitude, amplitude)
+>       actual = _covariance(values)
+                 ^^^^^^^^^^^^^^^^^^^
+
+proposals/offline_starter/test_covariance_scale_fallback.py:20: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+rows = array([[ 0.e+000,  0.e+000],
+       [ 1.e+154, -1.e-154],
+       [ 0.e+000,  0.e+000],
+       [ 1.e+154, -1.e-154],
+       [ 0.e+000,  0.e+000],
+       [ 1.e+154, -1.e-154],
+       [ 0.e+000,  0.e+000],
+       [ 1.e+154, -1.e-154]])
+
+    def _covariance(rows):
+        with np.errstate(over="ignore", invalid="ignore"):
+            covariance = np.atleast_2d(np.cov(rows, rowvar=False, ddof=1))
+        if not np.isfinite(covariance).all():
+            # np.cov may overflow its mean reduction even for a large constant
+            # column whose covariance is exactly zero. Only the failing arithmetic
+            # path uses shifted/normalized centering; normal-scale results retain
+            # their existing calculation and the declared squared-Frobenius metric.
+            with np.errstate(over="ignore", invalid="ignore", under="ignore"):
+                shifted = rows - rows[0]
+                if np.isfinite(shifted).all():
+                    scale = float(np.max(np.abs(shifted)))
+                    normalized = shifted / scale if scale else shifted
+                else:
+                    scale = float(np.max(np.abs(rows)))
+                    normalized = rows / scale
+                centered = normalized - normalized.mean(axis=0, keepdims=True)
+                covariance = ((centered.T @ centered / (len(rows) - 1)) * scale) * scale
+        if not np.isfinite(covariance).all():
+            raise ValueError("covariance/loss overflow; no comparison receipt")
+        # A genuinely nonconstant supplied column has positive sample variance.
+        # Underflow must not turn that dispersion into an exact zero covariance.
+        nonconstant = np.any(rows != rows[0], axis=0)
+        if np.any(nonconstant & (np.diag(covariance) == 0)):
+>           raise ValueError("covariance underflow; no comparison receipt")
+E           ValueError: covariance underflow; no comparison receipt
+
+proposals/offline_starter/development_comparison.py:43: ValueError
+_____ test_fallback_preserves_independently_scaled_columns[True-1.0-1e-07] _____
+
+small_amplitude = 1e-07, small_sign = 1.0, reverse_columns = True
+
+    @pytest.mark.parametrize("small_amplitude", [1e-7, 1e-154])
+    @pytest.mark.parametrize("small_sign", [1., -1.])
+    @pytest.mark.parametrize("reverse_columns", [False, True])
+    def test_fallback_preserves_independently_scaled_columns(small_amplitude, small_sign, reverse_columns):
+        amplitude = np.array([1e154, small_sign * small_amplitude])
+        if reverse_columns:
+            amplitude = amplitude[::-1]
+        values = np.stack([np.zeros(2), amplitude] * 4)
+        # Four observations at zero and four at a: sample covariance is
+        # 8*(a/2)(a/2)^T / 7 = (2/7) aa^T. Every entry is representable.
+        expected = (2. / 7.) * np.outer(amplitude, amplitude)
+        actual = _covariance(values)
+>       np.testing.assert_allclose(actual, expected, rtol=2e-14, atol=0.)
+E       AssertionError: 
+E       Not equal to tolerance rtol=2e-14, atol=0
+E       
+E       Mismatched elements: 1 / 4 (25%)
+E       Max absolute difference among violations: 1.07251018e-16
+E       Max relative difference among violations: 0.03753786
+E        ACTUAL: array([[2.964394e-015, 2.857143e+146],
+E              [2.857143e+146, 2.857143e+307]])
+E        DESIRED: array([[2.857143e-015, 2.857143e+146],
+E              [2.857143e+146, 2.857143e+307]])
+
+proposals/offline_starter/test_covariance_scale_fallback.py:21: AssertionError
+____ test_fallback_preserves_independently_scaled_columns[True-1.0-1e-154] _____
+
+small_amplitude = 1e-154, small_sign = 1.0, reverse_columns = True
+
+    @pytest.mark.parametrize("small_amplitude", [1e-7, 1e-154])
+    @pytest.mark.parametrize("small_sign", [1., -1.])
+    @pytest.mark.parametrize("reverse_columns", [False, True])
+    def test_fallback_preserves_independently_scaled_columns(small_amplitude, small_sign, reverse_columns):
+        amplitude = np.array([1e154, small_sign * small_amplitude])
+        if reverse_columns:
+            amplitude = amplitude[::-1]
+        values = np.stack([np.zeros(2), amplitude] * 4)
+        # Four observations at zero and four at a: sample covariance is
+        # 8*(a/2)(a/2)^T / 7 = (2/7) aa^T. Every entry is representable.
+        expected = (2. / 7.) * np.outer(amplitude, amplitude)
+>       actual = _covariance(values)
+                 ^^^^^^^^^^^^^^^^^^^
+
+proposals/offline_starter/test_covariance_scale_fallback.py:20: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+rows = array([[0.e+000, 0.e+000],
+       [1.e-154, 1.e+154],
+       [0.e+000, 0.e+000],
+       [1.e-154, 1.e+154],
+       [0.e+000, 0.e+000],
+       [1.e-154, 1.e+154],
+       [0.e+000, 0.e+000],
+       [1.e-154, 1.e+154]])
+
+    def _covariance(rows):
+        with np.errstate(over="ignore", invalid="ignore"):
+            covariance = np.atleast_2d(np.cov(rows, rowvar=False, ddof=1))
+        if not np.isfinite(covariance).all():
+            # np.cov may overflow its mean reduction even for a large constant
+            # column whose covariance is exactly zero. Only the failing arithmetic
+            # path uses shifted/normalized centering; normal-scale results retain
+            # their existing calculation and the declared squared-Frobenius metric.
+            with np.errstate(over="ignore", invalid="ignore", under="ignore"):
+                shifted = rows - rows[0]
+                if np.isfinite(shifted).all():
+                    scale = float(np.max(np.abs(shifted)))
+                    normalized = shifted / scale if scale else shifted
+                else:
+                    scale = float(np.max(np.abs(rows)))
+                    normalized = rows / scale
+                centered = normalized - normalized.mean(axis=0, keepdims=True)
+                covariance = ((centered.T @ centered / (len(rows) - 1)) * scale) * scale
+        if not np.isfinite(covariance).all():
+            raise ValueError("covariance/loss overflow; no comparison receipt")
+        # A genuinely nonconstant supplied column has positive sample variance.
+        # Underflow must not turn that dispersion into an exact zero covariance.
+        nonconstant = np.any(rows != rows[0], axis=0)
+        if np.any(nonconstant & (np.diag(covariance) == 0)):
+>           raise ValueError("covariance underflow; no comparison receipt")
+E           ValueError: covariance underflow; no comparison receipt
+
+proposals/offline_starter/development_comparison.py:43: ValueError
+____ test_fallback_preserves_independently_scaled_columns[True--1.0-1e-07] _____
+
+small_amplitude = 1e-07, small_sign = -1.0, reverse_columns = True
+
+    @pytest.mark.parametrize("small_amplitude", [1e-7, 1e-154])
+    @pytest.mark.parametrize("small_sign", [1., -1.])
+    @pytest.mark.parametrize("reverse_columns", [False, True])
+    def test_fallback_preserves_independently_scaled_columns(small_amplitude, small_sign, reverse_columns):
+        amplitude = np.array([1e154, small_sign * small_amplitude])
+        if reverse_columns:
+            amplitude = amplitude[::-1]
+        values = np.stack([np.zeros(2), amplitude] * 4)
+        # Four observations at zero and four at a: sample covariance is
+        # 8*(a/2)(a/2)^T / 7 = (2/7) aa^T. Every entry is representable.
+        expected = (2. / 7.) * np.outer(amplitude, amplitude)
+        actual = _covariance(values)
+>       np.testing.assert_allclose(actual, expected, rtol=2e-14, atol=0.)
+E       AssertionError: 
+E       Not equal to tolerance rtol=2e-14, atol=0
+E       
+E       Mismatched elements: 1 / 4 (25%)
+E       Max absolute difference among violations: 1.07251018e-16
+E       Max relative difference among violations: 0.03753786
+E        ACTUAL: array([[ 2.964394e-015, -2.857143e+146],
+E              [-2.857143e+146,  2.857143e+307]])
+E        DESIRED: array([[ 2.857143e-015, -2.857143e+146],
+E              [-2.857143e+146,  2.857143e+307]])
+
+proposals/offline_starter/test_covariance_scale_fallback.py:21: AssertionError
+____ test_fallback_preserves_independently_scaled_columns[True--1.0-1e-154] ____
+
+small_amplitude = 1e-154, small_sign = -1.0, reverse_columns = True
+
+    @pytest.mark.parametrize("small_amplitude", [1e-7, 1e-154])
+    @pytest.mark.parametrize("small_sign", [1., -1.])
+    @pytest.mark.parametrize("reverse_columns", [False, True])
+    def test_fallback_preserves_independently_scaled_columns(small_amplitude, small_sign, reverse_columns):
+        amplitude = np.array([1e154, small_sign * small_amplitude])
+        if reverse_columns:
+            amplitude = amplitude[::-1]
+        values = np.stack([np.zeros(2), amplitude] * 4)
+        # Four observations at zero and four at a: sample covariance is
+        # 8*(a/2)(a/2)^T / 7 = (2/7) aa^T. Every entry is representable.
+        expected = (2. / 7.) * np.outer(amplitude, amplitude)
+>       actual = _covariance(values)
+                 ^^^^^^^^^^^^^^^^^^^
+
+proposals/offline_starter/test_covariance_scale_fallback.py:20: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+rows = array([[ 0.e+000,  0.e+000],
+       [-1.e-154,  1.e+154],
+       [ 0.e+000,  0.e+000],
+       [-1.e-154,  1.e+154],
+       [ 0.e+000,  0.e+000],
+       [-1.e-154,  1.e+154],
+       [ 0.e+000,  0.e+000],
+       [-1.e-154,  1.e+154]])
+
+    def _covariance(rows):
+        with np.errstate(over="ignore", invalid="ignore"):
+            covariance = np.atleast_2d(np.cov(rows, rowvar=False, ddof=1))
+        if not np.isfinite(covariance).all():
+            # np.cov may overflow its mean reduction even for a large constant
+            # column whose covariance is exactly zero. Only the failing arithmetic
+            # path uses shifted/normalized centering; normal-scale results retain
+            # their existing calculation and the declared squared-Frobenius metric.
+            with np.errstate(over="ignore", invalid="ignore", under="ignore"):
+                shifted = rows - rows[0]
+                if np.isfinite(shifted).all():
+                    scale = float(np.max(np.abs(shifted)))
+                    normalized = shifted / scale if scale else shifted
+                else:
+                    scale = float(np.max(np.abs(rows)))
+                    normalized = rows / scale
+                centered = normalized - normalized.mean(axis=0, keepdims=True)
+                covariance = ((centered.T @ centered / (len(rows) - 1)) * scale) * scale
+        if not np.isfinite(covariance).all():
+            raise ValueError("covariance/loss overflow; no comparison receipt")
+        # A genuinely nonconstant supplied column has positive sample variance.
+        # Underflow must not turn that dispersion into an exact zero covariance.
+        nonconstant = np.any(rows != rows[0], axis=0)
+        if np.any(nonconstant & (np.diag(covariance) == 0)):
+>           raise ValueError("covariance underflow; no comparison receipt")
+E           ValueError: covariance underflow; no comparison receipt
+
+proposals/offline_starter/development_comparison.py:43: ValueError
+=========================== short test summary info ============================
+FAILED proposals/offline_starter/test_covariance_scale_fallback.py::test_fallback_preserves_independently_scaled_columns[False-1.0-1e-07]
+FAILED proposals/offline_starter/test_covariance_scale_fallback.py::test_fallback_preserves_independently_scaled_columns[False-1.0-1e-154]
+FAILED proposals/offline_starter/test_covariance_scale_fallback.py::test_fallback_preserves_independently_scaled_columns[False--1.0-1e-07]
+FAILED proposals/offline_starter/test_covariance_scale_fallback.py::test_fallback_preserves_independently_scaled_columns[False--1.0-1e-154]
+FAILED proposals/offline_starter/test_covariance_scale_fallback.py::test_fallback_preserves_independently_scaled_columns[True-1.0-1e-07]
+FAILED proposals/offline_starter/test_covariance_scale_fallback.py::test_fallback_preserves_independently_scaled_columns[True-1.0-1e-154]
+FAILED proposals/offline_starter/test_covariance_scale_fallback.py::test_fallback_preserves_independently_scaled_columns[True--1.0-1e-07]
+FAILED proposals/offline_starter/test_covariance_scale_fallback.py::test_fallback_preserves_independently_scaled_columns[True--1.0-1e-154]
+8 failed in 0.56s

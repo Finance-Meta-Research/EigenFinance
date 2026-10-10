@@ -1,0 +1,15 @@
+{
+  "expected_source_sha256": "04fd3848e75da10a397e93da690542f8b6bbe14bc05099d4ebe51123d82e8c9a",
+  "before_source_sha256": "04fd3848e75da10a397e93da690542f8b6bbe14bc05099d4ebe51123d82e8c9a",
+  "after_source_sha256": "04fd3848e75da10a397e93da690542f8b6bbe14bc05099d4ebe51123d82e8c9a",
+  "inherited_tests_before_sha256": "5d6b4e5d67e8755e756d56cf4eadea249bb7485de65a0f0ab65709713dc09616",
+  "inherited_tests_after_sha256": "5d6b4e5d67e8755e756d56cf4eadea249bb7485de65a0f0ab65709713dc09616",
+  "command": [
+    "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+    "-m",
+    "pytest",
+    "proposals/offline_starter",
+    "-q"
+  ],
+  "exit_code": 0
+}

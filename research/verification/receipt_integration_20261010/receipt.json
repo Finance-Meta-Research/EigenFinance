@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-10",
+  "repository": "Finance-Meta-Research/EigenFinance",
+  "scope": "Bounded engineering correctness/integration; no scientific efficacy result",
+  "parent_commit": "803321c27b5d354855d281ace7a16e56bafc478f",
+  "parent_tree": "c303a2eeb8c96f2ef5b93285572a32192071efa9",
+  "additional_parent_commits": [
+    "83c43f5ad96269dde3f647b25e40a36502191ce5"
+  ],
+  "dependent_pr": 2,
+  "updated_pr": 3,
+  "branch": "codex/research-integrity-20261010-eigenfinance-receipts",
+  "baseline": {
+    "failed": 2,
+    "passed": 0,
+    "exit_code": 1,
+    "source_sha256": {
+      "proposals/offline_starter/development_comparison.py": "0388fe90abbc3d44a5d46e64ab96589e7b56cae2ef60b16aceeff62954a1a4f6"
+    },
+    "log": "research/verification/receipt_integration_20261010/base_regressions.log",
+    "parent_commit": "04c151ee810d9cb1cc42de045d90b35246dd3f1c"
+  },
+  "fixed": {
+    "command": [
+      "python",
+      "-m",
+      "pytest",
+      "proposals/offline_starter",
+      "-q"
+    ],
+    "passed": 43,
+    "subtests_passed": 19,
+    "failed": 0,
+    "skipped": 0,
+    "exit_code": 0,
+    "log": "research/verification/receipt_integration_20261010/pytest.log",
+    "duration_seconds": 1.42
+  },
+  "environment": {
+    "versions": {
+      "numpy": "2.3.5",
+      "torch": "2.14.1+cpu",
+      "pytest": "9.1.1",
+      "scikit-learn": "1.8.0",
+      "python": "3.12.14"
+    },
+    "device": "CPU",
+    "numeric_threads": 1,
+    "PYTHONPATH": "proposals/offline_starter"
+  },
+  "artifact_sha256": {
+    "AGENTS.md": "55c63bd2ea207b6e5a9c18f32016b65f3b26180cda8117173ed0102c7f5ec78b",
+    "RESEARCH_STATE.json": "7282cb19068a7ef801ee71c2998e07a482c93cd39e3ac16c6c7cac6a22386896",
+    "proposals/offline_starter/DRAFT_CHARTER.md": "9a610ff6085ee946751e830e15130acb4a50862f0f84e7e45d2b946afba7f46f",
+    "proposals/offline_starter/development_comparison.py": "04fd3848e75da10a397e93da690542f8b6bbe14bc05099d4ebe51123d82e8c9a",
+    "proposals/offline_starter/test_covariance_offset.py": "1fe4180727c3a85e3ace2b779ce4782d4345b362e5d55707e6d63168e4a5e432",
+    "proposals/offline_starter/test_development_comparison.py": "5d6b4e5d67e8755e756d56cf4eadea249bb7485de65a0f0ab65709713dc09616",
+    "research/ENGINEERING_NUMERICAL_INTEGRITY_20261010.json": "ebfe7b101bfe45acea5bf6cc9752e4cf41abc7551d015ec62ca18519c2a09bea",
+    "proposals/offline_starter/INTEGRATION_NUMERICAL_RECEIPTS_20261010.md": "b277ff502a4d752f25cb2f543d00be34dfaf5e5bff0a67d5585e381462faafa6",
+    "proposals/offline_starter/test_integrated_numerical_receipts.py": "f39be7ba1ea5bad504b8117ea702826c39ca07969d4a6af83453ef986677227b",
+    "proposals/offline_starter/test_covariance_scale_fallback.py": "5bfa958e20222b374f141c3e3c470b2d9cf74efd90760c6b4f795981f3a9135a",
+    "research/verification/receipt_integration_20261010/base_regressions.log": "47fbb1424ad5089179a7db909e92f47e423a718358994bc663c1ebc8320c9ddc",
+    "research/verification/receipt_integration_20261010/latest_base_regressions.log": "c5f34a4345f1c42e4cbfd2d4fb05066629fb8537029ea727f1bd48dc6d0f059e",
+    "research/verification/receipt_integration_20261010/partial_inherited_tests_pytest.log": "2e16a48cd7856ec1fe0843caf4bb7c7ec3ce4d0162d4796e1b132008bcfc7fd2",
+    "research/verification/receipt_integration_20261010/pre_latest_loss_integration_pytest.log": "89ad4fa6eb5260cbedc7345d8b63f0a3af088486de524e1ca0abae283a25c316",
+    "research/verification/receipt_integration_20261010/pre_review_combined_pytest.log": "ed7de03785ff263cc6991a1fbf4f56e673ca63a93cafdd4ae1bd6e7a15afecc3",
+    "research/verification/receipt_integration_20261010/pytest.log": "b60dd3971adb025086b595f4354f4b030ef088b089800bc83d83ace35c26c814",
+    "research/verification/receipt_integration_20261010/review_regressions.log": "4239ab873e12553c052dae4599cb64f161e9cd6f7bdc706a7f338f95741a2999",
+    "research/verification/receipt_integration_20261010/source_binding_test_run.json": "cab59b5fb72aace2b93a22fdb226a318b06bc455c3ad857cff77f77fb9d041f9",
+    "research/verification/receipt_integration_20261010/static_checks.json": "0b89042cd538988bc1fe28ffe167c744e9c8ec13b72976e0f42e1a85b5145fd9"
+  },
+  "independent_review": {
+    "status": "COMPLETED",
+    "date": "2026-10-10",
+    "source_sha256": "04fd3848e75da10a397e93da690542f8b6bbe14bc05099d4ebe51123d82e8c9a",
+    "scope": "Initial blocker retained and repaired; eight exact-input 800-digit Decimal scale/sign/order cases and a ninth constant-column case; final helper-AST/call-site review and exact Fraction, minimum-subnormal loss, overflowing-sum mean probes passed.",
+    "result": "No scoped engineering blocker; no independent scientific validation claimed."
+  },
+  "scientific_runs": 0,
+  "protected_outcome_accesses": 0,
+  "paid_compute": 0,
+  "hosted_ci": "Not run for this exact revision; publishing commit will skip automatic hosted research workflows.",
+  "latest_parent_baseline": {
+    "parent_commit": "803321c27b5d354855d281ace7a16e56bafc478f",
+    "source_sha256": "19e5289fe31724ab2a2e8eaf98bbc706ae4ec0cb0a4b618580c7b95a498537f9",
+    "failed": 1,
+    "passed": 1,
+    "exit_code": 1,
+    "log": "research/verification/receipt_integration_20261010/latest_base_regressions.log"
+  },
+  "review_regression": {
+    "initial_integration_source_sha256": "c75b15f328c65acad57f81764bc2f37193f5e163a1ebef8b9d99116b1d81d855",
+    "covariance_helper_ast_equal_to_parent": "83c43f5ad96269dde3f647b25e40a36502191ce5",
+    "failed": 8,
+    "passed": 0,
+    "exit_code": 1,
+    "log": "research/verification/receipt_integration_20261010/review_regressions.log",
+    "cause": "Global normalization scale yielded finite wrong covariance or refused representable covariance for columns of very different amplitudes."
+  },
+  "retained_intermediate_runs": [
+    {
+      "scope": "initial old #3 plus #2 integration, before numerical review",
+      "passed": 31,
+      "subtests_passed": 13,
+      "log": "research/verification/receipt_integration_20261010/pre_review_combined_pytest.log"
+    },
+    {
+      "scope": "reviewed covariance correction with old #3 loss implementation",
+      "passed": 39,
+      "subtests_passed": 13,
+      "log": "research/verification/receipt_integration_20261010/pre_latest_loss_integration_pytest.log"
+    },
+    {
+      "scope": "latest loss integration before restoring four inherited #2 admission tests after copy mismatch",
+      "passed": 39,
+      "subtests_passed": 19,
+      "log": "research/verification/receipt_integration_20261010/partial_inherited_tests_pytest.log"
+    }
+  ],
+  "source_binding_record": "research/verification/receipt_integration_20261010/source_binding_test_run.json",
+  "scientific_gates": "Unactivated offline proposal; source/availability/protected authorization flags false; no real market data or model training; both parent histories preserved."
+}
