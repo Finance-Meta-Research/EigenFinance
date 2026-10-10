@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "project": "EigenFinance",
+  "updated_utc": "2026-10-10",
+  "current_phase": "ENGINEERING_REVIEW_COMPLETE_PENDING_INTEGRATION",
+  "scientific_disposition": "PROPOSED_SCOPE; not activated",
+  "scientific_scope_authority": [
+    "proposals/offline_starter/DRAFT_CHARTER.md"
+  ],
+  "engineering_question": "Recover representable covariance when the mean reduction overflows",
+  "current_change": "Integrate current PR #2 numerical admission with current PR #3 exact input/source/matrix receipts and subnormal Frobenius-loss recovery; correct the independently reproduced global-scaling covariance error with per-column normalization and exponent restoration.",
+  "required_session_reads": [
+    "proposals/offline_starter/DRAFT_CHARTER.md",
+    "research/ENGINEERING_NUMERICAL_INTEGRITY_20261010.json",
+    "proposals/offline_starter/INTEGRATION_NUMERICAL_RECEIPTS_20261010.md"
+  ],
+  "protected_boundary": "Fictional arithmetic fixtures only. Source/availability verification remain false; founder scope confirmation and separately frozen data study remain required.",
+  "protected_evaluation_opened": false,
+  "scientific_runs_this_revision": 0,
+  "research_complete": false,
+  "execution_budget": {
+    "scope": "bounded constructed regressions and existing correctness tests only",
+    "paid_compute": false,
+    "training_campaigns": 0,
+    "protected_runs": 0
+  },
+  "pending_gates": [
+    "GitHub integration of the existing draft #2/#3 stack after completed bounded independent engineering review.",
+    "Scientific hypothesis/specification/methodology/freeze/evidence/release gates remain governed by the retained study contracts."
+  ],
+  "history": [
+    {
+      "date": "2026-10-10",
+      "kind": "engineering_revision",
+      "record": "research/ENGINEERING_NUMERICAL_INTEGRITY_20261010.json",
+      "status": "implemented; 22 bounded tests passed; integration pending",
+      "scientific_outcomes_created": false
+    },
+    {
+      "id": "receipt_integration_20261010",
+      "date": "2026-10-10",
+      "kind": "engineering_revision",
+      "parent_commit": "803321c27b5d354855d281ace7a16e56bafc478f",
+      "additional_parent_commits": [
+        "83c43f5ad96269dde3f647b25e40a36502191ce5"
+      ],
+      "record": "proposals/offline_starter/INTEGRATION_NUMERICAL_RECEIPTS_20261010.md",
+      "verification_receipt": "research/verification/receipt_integration_20261010/receipt.json",
+      "status": "implemented; 43 bounded tests and 19 subtests passed; independent source and final integration reviews completed; existing draft integration pending",
+      "prior_session_current_change": "On the non-finite covariance path only, use reference-centered normalized arithmetic and restore units. Preserve original normal-scale calculations and existing genuine overflow/underflow rejection.",
+      "scientific_outcomes_created": false,
+      "source_sha256": "04fd3848e75da10a397e93da690542f8b6bbe14bc05099d4ebe51123d82e8c9a",
+      "independent_review": "Original covariance scaling blocker reproduced and repaired; exact Decimal/Fraction probes and final helper/call-site review passed; no scientific validation"
+    }
+  ],
+  "history_index_scope": "Index to retained project records and this revision; not a reconstruction or replacement of the complete git/artifact history.",
+  "latest_engineering_revision": "receipt_integration_20261010"
+}

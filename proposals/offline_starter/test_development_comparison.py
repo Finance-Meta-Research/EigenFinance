@@ -54,6 +54,37 @@ class DevelopmentComparisonTests(unittest.TestCase):
         self.assertFalse(result["protected_run_authorized"])
         self.assertFalse(result["source_verified"])
 
+    def test_nonconstant_covariance_cannot_underflow_to_zero(self):
+        r = self.record()
+        for row in r["rows"]:
+            row["returns"] = [v * 1e-200 for v in row["returns"]]
+        with self.assertRaisesRegex(ValueError, "covariance underflow"):
+            compare(r)
+
+    def test_unequal_covariances_cannot_report_exact_zero_error(self):
+        r = self.record()
+        for row in r["rows"]:
+            row["returns"] = [v * 1e-100 for v in row["returns"]]
+        with self.assertRaisesRegex(ValueError, "squared Frobenius loss underflow"):
+            compare(r)
+
+    def test_small_representable_nonzero_error_is_preserved(self):
+        r = self.record()
+        for row in r["rows"]:
+            row["returns"] = [v * 1e-75 for v in row["returns"]]
+        error = compare(r)["mean_squared_frobenius_error"]["sample"]
+        self.assertGreater(error, 0)
+        self.assertAlmostEqual(error / 3.2e-299, 1.0)
+
+    def test_genuine_zero_error_and_constant_observations_remain_valid(self):
+        equal_covariance = self.record()
+        equal_covariance["rows"][3]["returns"] = [2, 2]
+        self.assertEqual(compare(equal_covariance)["mean_squared_frobenius_error"]["sample"], 0)
+        constant = self.record()
+        for row in constant["rows"]:
+            row["returns"] = [1e-200, 2e-200]
+        self.assertTrue(all(error == 0 for error in compare(constant)["mean_squared_frobenius_error"].values()))
+
 
 if __name__ == "__main__":
     unittest.main()

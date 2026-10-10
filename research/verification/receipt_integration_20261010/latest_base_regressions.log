@@ -1,0 +1,33 @@
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_recovered_covariance_has_recomputable_receipt_matrices_and_source_binding _
+
+    def test_recovered_covariance_has_recomputable_receipt_matrices_and_source_binding():
+        supplied = record([[1e308, 0.], [1e308, 2.], [1e308, 0.], [1e308, 4.]])
+>       result = comparison.compare(supplied)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_integrated_numerical_receipts.py:30: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+development_comparison.py:98: in compare
+    losses = {name: squared_frobenius(prediction, realized)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+prediction = array([[inf, nan],
+       [nan,  2.]])
+realized = array([[inf, nan],
+       [nan,  8.]])
+
+    def squared_frobenius(prediction, realized):
+        with np.errstate(over="ignore", invalid="ignore", under="ignore"):
+            residual = prediction - realized
+            value = float(np.sum(residual**2))
+        if not np.isfinite(residual).all() or not math.isfinite(value):
+>           raise ValueError("covariance/loss overflow; no comparison receipt")
+E           ValueError: covariance/loss overflow; no comparison receipt
+
+development_comparison.py:25: ValueError
+=========================== short test summary info ============================
+FAILED test_integrated_numerical_receipts.py::test_recovered_covariance_has_recomputable_receipt_matrices_and_source_binding
+1 failed, 1 passed in 1.14s

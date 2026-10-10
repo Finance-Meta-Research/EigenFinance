@@ -1,0 +1,30 @@
+[
+  {
+    "command": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+      "-m",
+      "ruff",
+      "check",
+      "--isolated",
+      "--select",
+      "E4,E7,E9,F",
+      "proposals/offline_starter/development_comparison.py",
+      "proposals/offline_starter/test_covariance_offset.py",
+      "proposals/offline_starter/test_development_comparison.py",
+      "proposals/offline_starter/test_covariance_scale_fallback.py",
+      "proposals/offline_starter/test_integrated_numerical_receipts.py"
+    ],
+    "exit_code": 0,
+    "output": "All checks passed!\n"
+  },
+  {
+    "command": "compile(source_text, path, exec) for changed/inherited Python files",
+    "exit_code": 0,
+    "output": "Compiled without writing bytecode."
+  },
+  {
+    "command": "Compare both exact parents and reviewed helper ASTs",
+    "exit_code": 0,
+    "output": "#2 charter/numerical-history/offset-tests and latest #3 small-loss tests/workflow/docs retained; prior state history/scientific gates unchanged; reviewed covariance and latest loss/mean helper ASTs preserved."
+  }
+]

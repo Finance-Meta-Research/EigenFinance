@@ -44,6 +44,47 @@ def mean_losses(values):
     return mean
 
 
+def _covariance(rows):
+    with np.errstate(over="ignore", invalid="ignore"):
+        covariance = np.atleast_2d(np.cov(rows, rowvar=False, ddof=1))
+    if not np.isfinite(covariance).all():
+        # np.cov may overflow its mean reduction even for a large constant
+        # column whose covariance is exactly zero. Only the failing arithmetic
+        # path uses shifted/normalized centering; normal-scale results retain
+        # their existing calculation and the declared squared-Frobenius metric.
+        with np.errstate(over="ignore", invalid="ignore", under="ignore"):
+            shifted = rows - rows[0]
+            finite_shift = np.isfinite(shifted).all(axis=0)
+            # Each asset needs its own scale. A large unrelated column must
+            # not push a small column's normalized variance into subnormals.
+            scale = np.where(finite_shift, np.max(np.abs(shifted), axis=0),
+                             np.max(np.abs(rows), axis=0))
+            numerator = np.where(finite_shift, shifted, rows)
+            normalized = np.divide(numerator, scale, out=np.zeros_like(rows, dtype=np.float64),
+                                   where=scale != 0)
+            centered = normalized - normalized.mean(axis=0, keepdims=True)
+            normalized_covariance = centered.T @ centered / (len(rows) - 1)
+            # Restore both column units in one exponent operation. Either
+            # ordinary multiplication order can overflow/underflow before a
+            # representable cross-covariance has been formed.
+            covariance_fraction, covariance_exponent = np.frexp(normalized_covariance)
+            scale_fraction, scale_exponent = np.frexp(scale)
+            covariance = np.ldexp(
+                covariance_fraction * scale_fraction[:, None] * scale_fraction[None, :],
+                covariance_exponent + scale_exponent[:, None] + scale_exponent[None, :],
+            )
+        if np.any((normalized_covariance != 0) & (covariance == 0)):
+            raise ValueError("covariance underflow; no comparison receipt")
+    if not np.isfinite(covariance).all():
+        raise ValueError("covariance/loss overflow; no comparison receipt")
+    # A genuinely nonconstant supplied column has positive sample variance.
+    # Underflow must not turn that dispersion into an exact zero covariance.
+    nonconstant = np.any(rows != rows[0], axis=0)
+    if np.any(nonconstant & (np.diag(covariance) == 0)):
+        raise ValueError("covariance underflow; no comparison receipt")
+    return covariance
+
+
 def compare(record):
     if not isinstance(record, dict) or record.get("evaluation_mode") != "development":
         raise ValueError("only explicit development mode is supported")
@@ -89,8 +130,8 @@ def compare(record):
         context = values[start-train:start]
         future = values[start:start+horizon]
         with np.errstate(over="ignore", invalid="ignore"):
-            sample = np.atleast_2d(np.cov(context, rowvar=False, ddof=1))
-            realized = np.atleast_2d(np.cov(future, rowvar=False, ddof=1))
+            sample = _covariance(context)
+            realized = _covariance(future)
             diagonal = np.diag(np.diag(sample))
             # Fixed illustrative comparator, not tuned or advertised as optimal.
             shrunk = .8 * sample + .2 * diagonal
