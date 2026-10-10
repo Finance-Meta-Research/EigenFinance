@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-10",
+  "kind": "ENGINEERING_CORRECTNESS_REVISION",
+  "repository": "Finance-Meta-Research/EigenFinance",
+  "parent_commit": "ef9895aaace93214f38b0191532deddd1958e955",
+  "existing_draft_pr": 2,
+  "title": "Recover representable covariance when the mean reduction overflows",
+  "observation": "A constant fictional column of 1e308 returns is rejected even though its covariance is exactly zero; another finite changing column is lost with it.",
+  "cause": "NumPy covariance can overflow while summing a column to form its mean before centering.",
+  "severity": "incorrect arithmetic, state or evidence admission on valid/ambiguous boundary inputs",
+  "implemented_change": "On the non-finite covariance path only, use reference-centered normalized arithmetic and restore units. Preserve original normal-scale calculations and existing genuine overflow/underflow rejection.",
+  "predicted_consequence": "New constructed regressions fail on the recorded parent and pass after the repair while the existing bounded suite passes.",
+  "evidence": {
+    "pre_fix_new_tests_failed": 3,
+    "pre_fix_control_tests_passed": 1,
+    "post_fix_suite_tests_passed": 22,
+    "command": "PYTHONPATH=proposals/offline_starter OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python -m pytest -q proposals/offline_starter",
+    "environment": {
+      "python": "3.12.14",
+      "numpy": "2.3.5",
+      "torch": "2.14.1+cpu",
+      "pytest": "9.1.1",
+      "device": "CPU"
+    },
+    "critical_static_checks": "Ruff E9,F821,F822,F823 passed for all changed Python files",
+    "compilation": "All changed Python sources compiled",
+    "whitespace": "git diff --check passed"
+  },
+  "changed_python_sha256": {
+    "proposals/offline_starter/development_comparison.py": "be348cad299158bf91d4c8a27e890c3a4dd8edcebac902dae73e67b5baa6d4af",
+    "proposals/offline_starter/test_covariance_offset.py": "1fe4180727c3a85e3ace2b779ce4782d4345b362e5d55707e6d63168e4a5e432"
+  },
+  "scientific_runs": 0,
+  "scientific_result_changed": false,
+  "scientific_disposition": "PROPOSED_SCOPE; not activated",
+  "protected_boundary": "Fictional arithmetic fixtures only. Source/availability verification remain false; founder scope confirmation and separately frozen data study remain required.",
+  "research_complete": false,
+  "independent_review": "pending",
+  "integration": "draft pull request; not merged",
+  "release_gate": "Review/integrate the implementation and retain source identities; scientific successors remain separately gated."
+}

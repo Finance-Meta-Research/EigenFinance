@@ -7,7 +7,23 @@ import numpy as np
 
 
 def _covariance(rows):
-    covariance = np.atleast_2d(np.cov(rows, rowvar=False, ddof=1))
+    with np.errstate(over="ignore", invalid="ignore"):
+        covariance = np.atleast_2d(np.cov(rows, rowvar=False, ddof=1))
+    if not np.isfinite(covariance).all():
+        # np.cov may overflow its mean reduction even for a large constant
+        # column whose covariance is exactly zero. Only the failing arithmetic
+        # path uses shifted/normalized centering; normal-scale results retain
+        # their existing calculation and the declared squared-Frobenius metric.
+        with np.errstate(over="ignore", invalid="ignore", under="ignore"):
+            shifted = rows - rows[0]
+            if np.isfinite(shifted).all():
+                scale = float(np.max(np.abs(shifted)))
+                normalized = shifted / scale if scale else shifted
+            else:
+                scale = float(np.max(np.abs(rows)))
+                normalized = rows / scale
+            centered = normalized - normalized.mean(axis=0, keepdims=True)
+            covariance = ((centered.T @ centered / (len(rows) - 1)) * scale) * scale
     if not np.isfinite(covariance).all():
         raise ValueError("covariance/loss overflow; no comparison receipt")
     # A genuinely nonconstant supplied column has positive sample variance.
