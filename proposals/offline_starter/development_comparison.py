@@ -5,6 +5,7 @@ import json
 import math
 import hashlib
 from pathlib import Path
+from fractions import Fraction
 import numpy as np
 
 
@@ -14,6 +15,33 @@ def canonical_sha256(value):
     except (TypeError, ValueError) as error:
         raise ValueError("input and provenance must be finite JSON") from error
     return hashlib.sha256(encoded).hexdigest()
+
+
+def squared_frobenius(prediction, realized):
+    with np.errstate(over="ignore", invalid="ignore", under="ignore"):
+        residual = prediction - realized
+        value = float(np.sum(residual**2))
+    if not np.isfinite(residual).all() or not math.isfinite(value):
+        raise ValueError("covariance/loss overflow; no comparison receipt")
+    if value < float.fromhex('0x1p-1022') and np.any(residual != 0):
+        # Individual squared entries can round to zero even when their sum is
+        # representable. Round the exact binary-input sum once in this regime.
+        exact = sum((Fraction(float(x))**2 for x in residual.flat), Fraction())
+        value = float(exact)
+        if value == 0:
+            raise ValueError("squared Frobenius loss underflow; rescale inputs explicitly")
+    return value
+
+
+def mean_losses(values):
+    try:
+        total = math.fsum(values)
+    except OverflowError:
+        total = sum((Fraction(value) for value in values), Fraction())
+    mean = float(total / len(values))
+    if mean == 0 and total != 0:
+        raise ValueError("mean loss underflow; rescale inputs explicitly")
+    return mean
 
 
 def compare(record):
@@ -67,7 +95,7 @@ def compare(record):
             # Fixed illustrative comparator, not tuned or advertised as optimal.
             shrunk = .8 * sample + .2 * diagonal
             predictions = {"sample": sample, "diagonal": diagonal, "fixed_shrinkage_0_2": shrunk}
-            losses = {name: float(np.sum((prediction - realized)**2))
+            losses = {name: squared_frobenius(prediction, realized)
                       for name, prediction in predictions.items()}
         if not np.isfinite(sample).all() or not np.isfinite(realized).all() or any(not math.isfinite(v) for v in losses.values()):
             raise ValueError("covariance/loss overflow; no comparison receipt")
@@ -90,7 +118,7 @@ def compare(record):
             "evaluation_mode": "development", "source": source.strip(), "assets": assets,
             "train_rows": train, "horizon_rows": horizon, "folds": folds,
             "unused_tail_rows": (len(rows)-train) % horizon,
-            "mean_squared_frobenius_error": {name: math.fsum(f["squared_frobenius_error"][name]/len(folds) for f in folds)
+            "mean_squared_frobenius_error": {name: mean_losses([f["squared_frobenius_error"][name] for f in folds])
                                               for name in ["sample", "diagonal", "fixed_shrinkage_0_2"]},
             "source_verified": False, "availability_verified": False, "protected_run_authorized": False,
             "scope": "supplied development rows; noisy future covariance target; no trading or significance claim"}

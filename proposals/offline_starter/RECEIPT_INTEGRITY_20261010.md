@@ -59,3 +59,28 @@ A new exact-source bounded CI job runs this same proposed-tool suite with NumPy
 and one numeric thread. It launches no study or training, reads no protected
 data, and changes no retained research result or paper. The actual hosted result
 is recorded in the PR after completion.
+
+## Second pass: distinguish small covariance errors from zero
+
+At reviewed head `04c151ee810d9cb1cc42de045d90b35246dd3f1c`, squaring each matrix
+residual before summation rounded tiny entries to zero, even when the complete
+squared Frobenius error was representable. A constructed 16-asset covariance
+fixture reported zero for all methods instead of approximately 6.4e-323,
+5e-324 and 4.4e-323. Averaging per-fold contributions after dividing each by the
+fold count could discard additional subnormal information.
+
+The ordinary matrix-loss path is retained. Subnormal totals are recomputed by
+summing exact squared binary residuals and rounding once. A nonzero loss too
+small for the output dtype is refused with an explicit rescaling error instead
+of being labeled perfect. Mean losses accumulate before division, retaining an
+exact-rational overflow fallback and nonzero-underflow refusal. The covariance
+estimators, split windows, per-fold matrices, input identity, and false source /
+availability / authorization flags are unchanged. This is still a proposed,
+unactivated development-only tool with no market data or effectiveness claim.
+
+Four new `Fraction`-oracle methods produced seven failing subcases on the
+reviewed source; the exact-zero control passed. The full local proposed-tool
+suite passed **25 tests in 0.409 seconds**. The existing exact-source bounded CI
+runs these regressions. Stored losses remain rounded binary64 output values;
+the implementation does not infer economic significance from representable
+numerical differences or promise arbitrary-precision covariances.
